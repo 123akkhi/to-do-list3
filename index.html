@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Todo List</title>
+</head>
+<body>
+  <h1>Todo List</h1>
+
+  <form id="todo-form">
+    <label>
+      Item Name:
+      <input type="text" name="name">
+    </label>
+    <br>
+    <label>
+      Description:
+      <textarea name="description"></textarea>
+    </label>
+    <br>
+    <button type="submit">Add Item</button>
+  </form>
+
+  <h2>Todo Items</h2>
+  <ul id="todo-list">
+  </ul>
+
+  <h2>Done Items</h2>
+  <ul id="done-list">
+  </ul>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const API_URL = 'https://crudcrud.com/api/5311eebf44f4466aae4a92585fd08b77/TodoList';
+
+    // Get all the todos from the API
+    function getTodos() {
+      return axios.get(API_URL);
+    }
+
+    // Render the todos on the screen
+    function renderTodos(todos) {
+      const todoList = document.getElementById('todo-list');
+      const doneList = document.getElementById('done-list');
+
+      todoList.innerHTML = '';
+      doneList.innerHTML = '';
+
+      todos.forEach(todo => {
+        const listItem = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = todo.completed;
+        checkbox.addEventListener('change', () => {
+          updateTodoHandler(todo, checkbox.checked);
+        });
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = todo.title;
+
+        const descriptionSpan = document.createElement('span');
+        descriptionSpan.textContent = todo.description;
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', () => {
+          deleteTodoHandler(todo);
+        });
+
+        const markButton = document.createElement('button');
+        markButton.textContent = todo.completed ? 'Wrong' : 'Right';
+        markButton.addEventListener('click', () => {
+          markTodoHandler(todo);
+        });
+
+        listItem.appendChild(checkbox);
+        listItem.appendChild(nameSpan);
+        listItem.appendChild(descriptionSpan);
+        listItem.appendChild(deleteButton);
+        listItem.appendChild(markButton);
+
+        if (todo.completed) {
+          doneList.appendChild(listItem);
+        } else {
+          todoList.appendChild(listItem);
+        }
+      });
+    }
+
+    // Add a new todo item to the list
+    function addTodoHandler(event) {
+      event.preventDefault();
+
+      const form = event.target;
+      const name = form.elements.name.value;
+      const description = form.elements.description.value;
+
+      axios.post(API_URL, {
+        title: name,
+        description: description,
+        completed: false
+      }).then(response => {
+        getTodos().then(response => {
+          renderTodos(response.data);
+        }).catch(error => {
+          console.error(error);
+          alert('Failed to get todos');
+        });
+      }).catch(error => {
+        console.error(error);
+        alert('Failed to add todo');
+      });
+
+      form.reset();
+    }
+
+    // Update an existing todo item
+    function updateTodoHandler(todo, completed) {
+      axios.put(`${API_URL}/${todo.id}`, {
+        ...todo,
+        completed: completed
+      }).then(response => {
+        getTodos().then(response => {
+          renderTodos(response.data);
+        }).catch(error => {
+          console.error(error);
+          alert('Failed to get todos');
+        });
+      }).catch(error => {
+        console.error(error);
+        alert('Failed')
+    });
+    }
+
+    // Delete an existing todo item
+    function deleteTodoHandler(todo) {
+      axios.delete(`${API_URL}/${todo.id}`).then(response => {
+        getTodos().then(response => {
+          renderTodos(response.data);
+        }).catch(error => {
+          console.error(error);
+          alert('Failed to get todos');
+        });
+      }).catch(error => {
+        console.error(error);
+        alert('Failed to delete todo');
+      });
+    }
+
+    // Mark a todo item as completed or incomplete
+    function markTodoHandler(todo) {
+      const completed = !todo.completed;
+
+      axios.put(`${API_URL}/${todo.id}`, {
+        ...todo,
+        completed: completed
+      }).then(response => {
+        getTodos().then(response => {
+          renderTodos(response.data);
+        }).catch(error => {
+          console.error(error);
+          alert('Failed to get todos');
+        });
+      }).catch(error => {
+        console.error(error);
+        alert('Failed to mark todo');
+      });
+    }
+
+    // Initialize the todo list
+    function init() {
+      const form = document.getElementById('todo-form');
+      form.addEventListener('submit', addTodoHandler);
+
+      getTodos().then(response => {
+        renderTodos(response.data);
+      }).catch(error => {
+        console.error(error);
+        alert('Failed to get todos');
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
